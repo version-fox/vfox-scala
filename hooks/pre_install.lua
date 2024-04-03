@@ -7,7 +7,7 @@ local util = require("util")
 function PLUGIN:PreInstall(ctx)
     local version = ctx.version
     local downloadUrl = util:getDownloadUrl(version)
-    print(downloadUrl)
+    -- TODO: get scala 3+ sha256sum
     return {
         version = version,
         url = downloadUrl,
