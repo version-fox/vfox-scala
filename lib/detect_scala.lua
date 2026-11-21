@@ -19,19 +19,6 @@
 --- `lib`, else from the name of the folder, else from `scala -version`.
 local detect = {}
 
--- TEMPORARY TRACE (diagnostics for the Windows CI run; removed in the next commit).
-local function trace(...)
-    local parts = {}
-    for i = 1, select("#", ...) do
-        parts[#parts + 1] = tostring((select(i, ...)))
-    end
-    print("[scala-trace] " .. table.concat(parts, " | "))
-end
-
-local function escape(text)
-    return (text:gsub("\r", "\\r"):gsub("\n", "\\n"))
-end
-
 local function trim(value)
     return (value:gsub("^%s+", ""):gsub("%s+$", ""))
 end
@@ -88,7 +75,6 @@ function detect.list_entries(dir, dirs_only)
     end
     local output = handle:read("*a") or ""
     handle:close()
-    trace("list", cmd, #output, escape(output:sub(1, 200)))
     local result = {}
     -- Lines from `dir /b` end in CR LF; both characters separate the entries.
     for line in output:gmatch("[^\r\n]+") do
@@ -126,7 +112,6 @@ end
 --- @return string|nil
 function detect.scala_home(dir)
     for _, candidate in ipairs({ dir, detect.join(dir, "libexec") }) do
-        trace("home?", candidate, exists(launcher(candidate)))
         if exists(launcher(candidate)) then
             return candidate
         end
@@ -183,7 +168,6 @@ local function version_from_launcher(home)
     end
     local output = handle:read("*a") or ""
     handle:close()
-    trace("probe", cmd, #output, escape(output:sub(1, 240)))
     return output:match("Scala version %(default%):%s*(%d[%w%.%-]*)") or output:match("version%s+(%d[%w%.%-]*)")
 end
 
@@ -273,14 +257,12 @@ function detect.find_all()
         end
         seen_paths[home] = true
         local version = detect.version_for(home, dir)
-        trace("version", home, version)
         if version then
             table.insert(found, { version = version, path = home, note = note })
         end
     end
 
     for _, root in ipairs(detect.candidate_roots()) do
-        trace("root", root.mode, root.path, is_windows(), is_vfox_managed(root.path))
         if not is_vfox_managed(root.path) then
             if root.mode == "home" then
                 local home = detect.scala_home(root.path)
@@ -290,7 +272,6 @@ function detect.find_all()
             else
                 for _, entry in ipairs(detect.list_children(root.path)) do
                     local wanted = root.mode == "entries" or lower(basename(entry)):find("scala", 1, true) ~= nil
-                    trace("entry", entry, wanted)
                     local home = wanted and detect.scala_home(entry)
                     if home then
                         add_home(home, root.note, entry)
