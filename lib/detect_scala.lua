@@ -53,7 +53,9 @@ local function shell_quote(value)
 end
 
 --- Lists the entries of dir as full paths, or {} when dir cannot be read.
---- With dirs_only on Windows, only the subdirectories are listed.
+--- With dirs_only on Windows, only the subdirectories are listed. The output is
+--- read whole and split into lines, because vfox's io.popen on Windows returns a
+--- handle with read and close only, and no lines method.
 --- @param dir string
 --- @param dirs_only boolean
 --- @return table
@@ -71,14 +73,16 @@ function detect.list_entries(dir, dirs_only)
     if not handle then
         return {}
     end
+    local output = handle:read("*a") or ""
+    handle:close()
     local result = {}
-    for line in handle:lines() do
+    -- Lines from `dir /b` end in CR LF; both characters separate the entries.
+    for line in output:gmatch("[^\r\n]+") do
         line = trim(line)
         if line ~= "" and line ~= "." and line ~= ".." then
             table.insert(result, detect.join(dir, line))
         end
     end
-    handle:close()
     return result
 end
 

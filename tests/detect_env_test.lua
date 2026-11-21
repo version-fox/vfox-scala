@@ -46,26 +46,22 @@ io.open = function(path, mode)
     }
 end
 
+-- The fake handle has read and close only, as vfox's Windows io.popen does
+-- (see internal/plugin/luai/exec.go in vfox): a listing is read whole.
 io.popen = function(cmd, mode)
+    local output = ""
     if cmd:find(" -version", 1, true) then
-        return {
-            read = function()
-                return "Scala code runner version 3.4.2 -- Copyright\n"
-            end,
-            close = function()
-                return true
-            end,
-        }
+        output = "Scala code runner version 3.4.2 -- Copyright\n"
+    else
+        local dir = cmd:match("'([^']+)'") or cmd:match('"([^"]+)"')
+        output = table.concat(dirs[norm(dir)] or {}, "\n") .. "\n"
     end
-    local dir = cmd:match("'([^']+)'") or cmd:match('"([^"]+)"')
-    local children = (dir and dirs[norm(dir)]) or {}
-    local index = 0
     return {
-        lines = function()
-            return function()
-                index = index + 1
-                return children[index]
+        read = function(_, format)
+            if format == "*a" then
+                return output
             end
+            return nil
         end,
         close = function()
             return true

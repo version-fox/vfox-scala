@@ -42,6 +42,7 @@ vfox 加载 `metadata.lua`，在命令需要时调用对应的钩子，并把 `P
 - `Detect` 返回 `{ version, path, note }`，每个版本一条，因此同一个 Scala 即使能通过两条路径找到，也只提供一次。
 - 无法读取下载列表时，`Available` 会抛出错误。它不会返回空列表，因为那看起来像是 Scala 没有任何发行版。
 - 在 Windows 上，`RUNTIME.osType` 为 `windows`，因此 Windows 分支按这一拼写进行比较。
+- `io.popen` 返回的句柄因平台而异：在 Windows 上 vfox 返回的句柄只有 `read` 与 `close`，因此应使用 `read("*a")` 读取全部输出并切分为行，而不要调用 `lines()`。
 
 ## 版本与下载
 

@@ -42,6 +42,7 @@ A few contracts that cost time to find:
 - `Detect` returns `{ version, path, note }`, one entry per version, so the same Scala reached through two paths is offered once.
 - `Available` raises an error when the download list cannot be read. It does not return an empty list, which would look like Scala had no releases.
 - `RUNTIME.osType` is `windows` on Windows, so the Windows branches compare with that spelling.
+- `io.popen` handles differ by platform. On Windows, vfox returns a handle with `read` and `close` only, so read the output with `read("*a")` and split it into lines rather than calling `lines()`.
 
 ## Versions and downloads
 

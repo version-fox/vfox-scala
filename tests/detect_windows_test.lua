@@ -49,33 +49,27 @@ io.open = function(path, mode)
     }
 end
 
+-- The fake handle has read and close only, as vfox's Windows io.popen does
+-- (see internal/plugin/luai/exec.go in vfox), and `dir /b` lines end in CR LF.
 io.popen = function(cmd, mode)
+    local output = ""
     if cmd:find(" -version", 1, true) then
-        local output = ""
         for launcher, text in pairs(outputs) do
             if cmd:find(launcher, 1, true) then
                 output = text
             end
         end
-        return {
-            read = function()
-                return output
-            end,
-            close = function()
-                return true
-            end,
-        }
+    else
+        assert(cmd:find("dir /b", 1, true), "listings use dir /b: " .. cmd)
+        local dir = cmd:match('"([^"]+)"')
+        output = table.concat(dirs[norm(dir)] or {}, "\r\n") .. "\r\n"
     end
-    assert(cmd:find("dir /b", 1, true), "listings use dir /b: " .. cmd)
-    local dir = cmd:match('"([^"]+)"')
-    local children = (dir and dirs[norm(dir)]) or {}
-    local index = 0
     return {
-        lines = function()
-            return function()
-                index = index + 1
-                return children[index]
+        read = function(_, format)
+            if format == "*a" then
+                return output
             end
+            return nil
         end,
         close = function()
             return true

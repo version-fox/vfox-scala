@@ -54,32 +54,27 @@ io.open = function(path, mode)
     }
 end
 
+-- vfox's io.popen on Windows returns a handle with read and close only (see
+-- internal/plugin/luai/exec.go in vfox), so this fake has no lines method: a
+-- listing is read whole, as that handle is.
 io.popen = function(cmd, mode)
+    local output = ""
     if cmd:find(" -version", 1, true) then
-        local output = ""
         for launcher, text in pairs(outputs) do
             if cmd:find(launcher, 1, true) then
                 output = text
             end
         end
-        return {
-            read = function()
-                return output
-            end,
-            close = function()
-                return true
-            end,
-        }
+    else
+        local dir = cmd:match("'([^']+)'") or cmd:match('"([^"]+)"')
+        output = table.concat(dirs[norm(dir)] or {}, "\n") .. "\n"
     end
-    local dir = cmd:match("'([^']+)'") or cmd:match('"([^"]+)"')
-    local children = (dir and dirs[norm(dir)]) or {}
-    local index = 0
     return {
-        lines = function()
-            return function()
-                index = index + 1
-                return children[index]
+        read = function(_, format)
+            if format == "*a" then
+                return output
             end
+            return nil
         end,
         close = function()
             return true
