@@ -30,7 +30,7 @@
 1. `vfox install scala@2.10.4` 从 scala-lang.org 的归档安装，插件从 2.10.4 的下载页找到该归档。本组不安装其他归档发行版。
 2. 一个 Scala 2.12.20 被放在 vfox 之外的文件夹中：Linux 上为 `/opt/scala-system`，Windows 上为 `ProgramFiles` 下的 `scala-system`。`vfox link --detect scala --yes` 必须找到它，将其命名为 `2.12.20` 并报告该文件夹；之后 `vfox exec scala@2.12.20 -- scala -version` 必须能够运行它。
 
-第二组所用的 Scala 2.12.20 从 GitHub 下载，套件中不附带摘要：GitHub 的 API 没有为该发行版的资产提供摘要，因此套件也不固定任何摘要。它是测试夹具，不是 vfox 的下载。vfox 本身的发行版则按 GitHub 为其资产发布的摘要固定，见 `tests/e2e/common/common.go` 与 Test Plugin 工作流。
+第二组所用的 Scala 2.12.20 从 GitHub 下载，并按 `tests/e2e/common/common.go` 中固定的 SHA-256 校验。GitHub 的 API 没有为该发行版的资产提供摘要，因此固定的值是根据资产计算的，并与 scala-lang.org 提供的副本一致。下载内容一旦变化，套件即失败。它是测试夹具，不是 vfox 的下载。vfox 本身的发行版则按 GitHub 为其资产发布的摘要固定，见 `tests/e2e/common/common.go` 与 Test Plugin 工作流。
 
 ## 运行 Linux 套件
 

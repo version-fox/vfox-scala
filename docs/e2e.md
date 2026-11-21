@@ -30,7 +30,7 @@ Each suite has two groups, and the groups share one flow of checks (`common.Chec
 1. `vfox install scala@2.10.4` installs from the scala-lang.org archive, which the plugin finds on the download page of 2.10.4. The group installs no other archive release.
 2. A Scala 2.12.20 is put in a folder outside vfox, `/opt/scala-system` on Linux and `scala-system` under `ProgramFiles` on Windows. `vfox link --detect scala --yes` must find it, name it `2.12.20` and report the folder, and `vfox exec scala@2.12.20 -- scala -version` must then run it.
 
-The Scala 2.12.20 of the second group is downloaded from GitHub without a digest in the suite: GitHub's API gives none for that release's assets, so the suite pins none. It is a fixture, not a vfox download. The vfox release itself is pinned to the digests that GitHub publishes for its assets, in `tests/e2e/common/common.go` and in the Test Plugin workflow.
+The Scala 2.12.20 of the second group is downloaded from GitHub and checked against a SHA-256 pinned in `tests/e2e/common/common.go`. GitHub's API gives no digest for that release's assets, so the pinned values were computed from the assets, and they match the copies that scala-lang.org serves. A changed download fails the suite. It is a fixture, not a vfox download. The vfox release itself is pinned to the digests that GitHub publishes for its assets, in `tests/e2e/common/common.go` and in the Test Plugin workflow.
 
 ## Running the Linux suite
 

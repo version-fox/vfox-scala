@@ -142,16 +142,19 @@ func startContainer(t *testing.T, plugin []byte) *dockerSession {
 
 // installSystemScala puts Scala common.ScalaSystem in /opt/scala-system, the
 // way someone would install it by hand, outside vfox, and checks it started.
+// The archive is checked against its pinned SHA-256 before it is unpacked.
 func installSystemScala(t *testing.T, s *dockerSession) {
 	t.Helper()
 	url := common.ScalaSystemURL("tgz")
 	script := `set -eu
 mkdir -p /opt/staging
-curl --fail --silent --show-error --location "$1" | tar --extract --gzip --directory /opt/staging
+curl --fail --silent --show-error --location --output /opt/staging/scala.tgz "$1"
+echo "$3  /opt/staging/scala.tgz" | sha256sum -c -
+tar --extract --gzip --file /opt/staging/scala.tgz --directory /opt/staging
 mv "/opt/staging/scala-$2" /opt/scala-system
 rm -rf /opt/staging`
 	err := common.Retry(common.Attempts(), 10*time.Second, func() error {
-		out, runErr := s.Run("", "sh", "-c", script, "sh", url, common.ScalaSystem)
+		out, runErr := s.Run("", "sh", "-c", script, "sh", url, common.ScalaSystem, common.ScalaSystemTgzSHA256)
 		if runErr != nil {
 			return fmt.Errorf("%w: %s", runErr, tail(out))
 		}

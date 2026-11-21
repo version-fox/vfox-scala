@@ -56,6 +56,14 @@ const (
 	ScalaSystem = "2.12.20"
 )
 
+// The SHA-256 of the GitHub release archives of ScalaSystem. GitHub publishes no
+// digest for them, so the values were computed from the assets; scala-lang.org
+// serves identical copies.
+const (
+	ScalaSystemTgzSHA256 = "cc29d91ad390dc8e9a68d1e2ec6892711b64116f549fecd67a928361d33a39c0"
+	ScalaSystemZipSHA256 = "fab2a5f87d58e641b5ea612b3752e70b8d6160c568546cc76c0b2b9e59dd079a"
+)
+
 // Session is one environment that vfox runs in, fresh for each check: a
 // container on Linux, a temporary folder on the host for Windows.
 type Session interface {
@@ -186,14 +194,8 @@ func DownloadVerified(url, want, dest string) error {
 	return download(url, want, dest)
 }
 
-// Download downloads url to dest without a checksum, for fixtures whose
-// publisher gives none. vfox's own release is pinned with DownloadVerified.
-func Download(url, dest string) error {
-	return download(url, "", dest)
-}
-
-// download saves url to dest, and checks its SHA-256 when want is not empty.
-// Nothing is left at dest on a failure.
+// download saves url to dest, and checks its SHA-256 against want. Nothing is
+// left at dest on a failure.
 func download(url, want, dest string) error {
 	client := &http.Client{Timeout: 10 * time.Minute}
 	resp, err := client.Get(url)
@@ -219,7 +221,7 @@ func download(url, want, dest string) error {
 		os.Remove(part)
 		return err
 	}
-	if got := hex.EncodeToString(hash.Sum(nil)); want != "" && got != want {
+	if got := hex.EncodeToString(hash.Sum(nil)); got != want {
 		os.Remove(part)
 		return fmt.Errorf("SHA-256 of %s is %s, want %s", url, got, want)
 	}

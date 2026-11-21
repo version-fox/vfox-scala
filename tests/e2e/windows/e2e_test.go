@@ -158,7 +158,7 @@ func installSystemScala(t *testing.T, s *hostSession, base string) string {
 	t.Helper()
 	archive := filepath.Join(base, "scala-"+common.ScalaSystem+".zip")
 	err := common.Retry(common.Attempts(), 10*time.Second, func() error {
-		return common.Download(common.ScalaSystemURL("zip"), archive)
+		return common.DownloadVerified(common.ScalaSystemURL("zip"), common.ScalaSystemZipSHA256, archive)
 	})
 	if err != nil {
 		t.Fatalf("download Scala %s: %v", common.ScalaSystem, err)
