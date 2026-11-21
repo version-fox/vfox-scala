@@ -31,27 +31,50 @@ import (
 	"github.com/version-fox/vfox-scala/tests/e2e/common"
 )
 
-// hostSession runs commands on the host. Each session has its own VFOX_HOME
-// and a folder for the checks to write into.
+// hostSession runs commands on the host. Each session has its own VFOX_HOME, a
+// Program Files folder that vfox's Detect reads through ProgramFiles, and a
+// folder for the checks to write into.
 type hostSession struct {
-	vfox string
-	home string
-	work string
-	zip  string
+	vfox         string
+	home         string
+	work         string
+	programFiles string
+	zip          string
 }
 
 func (s *hostSession) Vfox(args ...string) (string, error) {
 	return s.Run(s.work, s.vfox, args...)
 }
 
+// Run runs name with args in dir, with the session's VFOX_HOME and ProgramFiles.
+//
+// ProgramW6432 is left out of the environment. On the Windows runner a child
+// process reported the real Program Files folder for ProgramFiles while
+// ProgramW6432 was in its environment, even though ProgramFiles was set to a
+// folder of the suite's own. Removing it let the override through.
 func (s *hostSession) Run(dir, name string, args ...string) (string, error) {
 	cmd := exec.Command(name, args...)
 	cmd.Dir = dir
 	// The shell of UseGlobal finds vfox by its name, so its folder goes first.
 	path := filepath.Dir(s.vfox) + string(os.PathListSeparator) + os.Getenv("PATH")
-	cmd.Env = append(os.Environ(), "VFOX_HOME="+s.home, "PATH="+path)
+	cmd.Env = append(envWithout(os.Environ(), "ProgramW6432"),
+		"VFOX_HOME="+s.home, "ProgramFiles="+s.programFiles, "PATH="+path)
 	out, err := cmd.CombinedOutput()
 	return string(out), err
+}
+
+// envWithout returns env without the variables named name. Windows compares
+// variable names without regard to case, and so does this.
+func envWithout(env []string, name string) []string {
+	var out []string
+	for _, kv := range env {
+		key, _, _ := strings.Cut(kv, "=")
+		if strings.EqualFold(key, name) {
+			continue
+		}
+		out = append(out, kv)
+	}
+	return out
 }
 
 // UseGlobal activates vfox in PowerShell the way `vfox activate pwsh` does in a
@@ -90,12 +113,13 @@ func newSession(t *testing.T, base, group, vfoxExe, zip string) *hostSession {
 	t.Helper()
 	root := filepath.Join(base, group)
 	s := &hostSession{
-		vfox: vfoxExe,
-		home: filepath.Join(root, "VFOX HOME", ".vfox"),
-		work: filepath.Join(root, "work"),
-		zip:  zip,
+		vfox:         vfoxExe,
+		home:         filepath.Join(root, "VFOX HOME", ".vfox"),
+		work:         filepath.Join(root, "work"),
+		programFiles: filepath.Join(root, "Program Files"),
+		zip:          zip,
 	}
-	for _, dir := range []string{s.home, s.work} {
+	for _, dir := range []string{s.home, s.work, s.programFiles} {
 		if err := os.MkdirAll(dir, 0o755); err != nil {
 			t.Fatal(err)
 		}
@@ -127,31 +151,11 @@ func installVfox(t *testing.T, base string) string {
 	return exe
 }
 
-// installSystemScala puts Scala common.ScalaSystem in the real Program Files
-// folder as scala-system, the way someone would install it by hand, outside
-// vfox, and returns that folder. The folder is removed when the test ends.
-//
-// The suite once pointed ProgramFiles at a temporary folder for vfox. The
-// plugin did not see that override on the Windows runner, so the fixture goes
-// where the plugin looks, which needs an elevated shell.
-func installSystemScala(t *testing.T, base string) string {
+// installSystemScala puts Scala common.ScalaSystem in the session's Program
+// Files folder as scala-system, the way someone would install it by hand, outside
+// vfox, and returns that folder.
+func installSystemScala(t *testing.T, s *hostSession, base string) string {
 	t.Helper()
-	programFiles := os.Getenv("ProgramFiles")
-	if programFiles == "" {
-		t.Fatal("ProgramFiles is not set")
-	}
-	extracted := filepath.Join(programFiles, "scala-"+common.ScalaSystem)
-	system := filepath.Join(programFiles, "scala-system")
-	for _, dir := range []string{extracted, system} {
-		if _, err := os.Stat(dir); err == nil {
-			t.Fatalf("%s already exists; remove it before running the suite", dir)
-		}
-	}
-	t.Cleanup(func() {
-		_ = os.RemoveAll(extracted)
-		_ = os.RemoveAll(system)
-	})
-
 	archive := filepath.Join(base, "scala-"+common.ScalaSystem+".zip")
 	err := common.Retry(common.Attempts(), 10*time.Second, func() error {
 		return common.Download(common.ScalaSystemURL("zip"), archive)
@@ -159,9 +163,11 @@ func installSystemScala(t *testing.T, base string) string {
 	if err != nil {
 		t.Fatalf("download Scala %s: %v", common.ScalaSystem, err)
 	}
-	if err := common.ExtractZip(archive, programFiles); err != nil {
-		t.Fatalf("unpack Scala %s into %s (an elevated shell is needed): %v", common.ScalaSystem, programFiles, err)
+	if err := common.ExtractZip(archive, s.programFiles); err != nil {
+		t.Fatalf("unpack Scala %s: %v", common.ScalaSystem, err)
 	}
+	extracted := filepath.Join(s.programFiles, "scala-"+common.ScalaSystem)
+	system := filepath.Join(s.programFiles, "scala-system")
 	if err := os.Rename(extracted, system); err != nil {
 		t.Fatalf("move Scala %s into place: %v", common.ScalaSystem, err)
 	}
@@ -169,8 +175,7 @@ func installSystemScala(t *testing.T, base string) string {
 }
 
 // TestE2E runs the Windows checks. It needs network access to GitHub and
-// scala-lang.org, a JDK on the PATH and an elevated shell, since the second
-// group writes to Program Files. It takes a while.
+// scala-lang.org and a JDK on the PATH, and takes a while.
 func TestE2E(t *testing.T) {
 	if testing.Short() {
 		t.Skip("the Windows suite runs vfox on the host; run it without -short")
@@ -201,7 +206,7 @@ func TestE2E(t *testing.T) {
 
 	t.Run("archive and detect", func(t *testing.T) {
 		s := newSession(t, base, "detect", vfoxExe, zip)
-		system := installSystemScala(t, base)
+		system := installSystemScala(t, s, base)
 		common.CheckArchiveAndDetect(t, s, system)
 	})
 }
