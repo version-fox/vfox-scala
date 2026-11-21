@@ -12,10 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// TEMPORARY diagnostics: why the ProgramFiles override does not reach the
-// plugin on the Windows runner. Each environment variant is probed four ways:
-// a child test binary (Go's os.Getenv), cmd.exe, pwsh and the plugin itself
-// (vfox plugin run, whose Lua os.getenv is the one the scan uses). This file is
+// TEMPORARY diagnostics: which environment variable stops a child process from
+// seeing the ProgramFiles override on the Windows runner. The probe is the
+// test binary itself, run as a child with a chosen environment. This file is
 // removed once the cause is fixed.
 package windows
 
@@ -31,31 +30,43 @@ import (
 
 const diagChildEnv = "DIAG_CHILD"
 
-// TestE2EDiagChild runs as a child of TestE2EDiagEnv and prints what the
-// process sees in its environment.
+// TestE2EDiagChild runs as a child of TestE2EDiagBisect and prints how many
+// environment entries it received and what it reads for ProgramFiles.
 func TestE2EDiagChild(t *testing.T) {
 	if os.Getenv(diagChildEnv) != "1" {
-		t.Skip("runs only as a child of TestE2EDiagEnv")
+		t.Skip("runs only as a child of TestE2EDiagBisect")
 	}
-	fmt.Printf("DIAG-CHILD ProgramFiles=%q DIAG_PROBE=%q\n", os.Getenv("ProgramFiles"), os.Getenv("DIAG_PROBE"))
+	fmt.Printf("DIAG-CHILD len=%d ProgramFiles=%q\n", len(os.Environ()), os.Getenv("ProgramFiles"))
 	os.Exit(0)
 }
 
-type diagVariant struct {
-	name string
-	env  []string
+// diagChild runs the test binary with env and returns what it printed.
+func diagChild(self string, env []string) string {
+	child := exec.Command(self, "-test.run=^TestE2EDiagChild$")
+	child.Env = append(append([]string(nil), env...), diagChildEnv+"=1")
+	out, err := child.CombinedOutput()
+	if err != nil {
+		return fmt.Sprintf("error: %v: %s", err, strings.TrimSpace(string(out)))
+	}
+	return strings.TrimSpace(string(out))
 }
 
-func filterDiagEnv(env []string, name string) []string {
-	var out []string
-	for _, kv := range env {
-		key, _, _ := strings.Cut(kv, "=")
-		if strings.EqualFold(key, name) {
-			continue
-		}
-		out = append(out, kv)
+// classify names what a child saw for ProgramFiles: the fake folder, the real
+// one, or anything else (with the raw output).
+func classify(output string) string {
+	switch {
+	case strings.Contains(output, "Fake Program Files"):
+		return "fake"
+	case strings.Contains(output, `ProgramFiles="C:`):
+		return "real"
+	default:
+		return "other: " + output
 	}
-	return out
+}
+
+func keyOf(kv string) string {
+	key, _, _ := strings.Cut(kv, "=")
+	return key
 }
 
 func minimalDiagEnv(programFiles, home string) []string {
@@ -68,44 +79,9 @@ func minimalDiagEnv(programFiles, home string) []string {
 	return env
 }
 
-// writeDiagProbe writes a plugin whose Detect hook returns what its Lua
-// os.getenv sees for ProgramFiles and DIAG_PROBE.
-func writeDiagProbe(t *testing.T, dir string) {
-	t.Helper()
-	files := map[string]string{
-		"metadata.lua": `PLUGIN = {}
-PLUGIN.name = "probe"
-PLUGIN.version = "0.0.1"
-PLUGIN.homepage = "https://example.invalid/probe"
-PLUGIN.license = "Apache 2.0"
-PLUGIN.description = "diagnostics"
-`,
-		"hooks/detect.lua": `function PLUGIN:Detect(ctx)
-    local pf = os.getenv("ProgramFiles") or "<nil>"
-    local probe = os.getenv("DIAG_PROBE") or "<nil>"
-    return {
-        { version = "1.0.0", path = pf .. " ; " .. probe, note = "diag" },
-    }
-end
-`,
-		"hooks/pre_install.lua": "function PLUGIN:PreInstall(ctx)\n    return {}\nend\n",
-		"hooks/available.lua":   "function PLUGIN:Available(ctx)\n    return {}\nend\n",
-		"hooks/env_keys.lua":    "function PLUGIN:EnvKeys(ctx)\n    return {}\nend\n",
-	}
-	for name, content := range files {
-		path := filepath.Join(dir, filepath.FromSlash(name))
-		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
-			t.Fatal(err)
-		}
-		if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
-			t.Fatal(err)
-		}
-	}
-}
-
-// TestE2EDiagEnv logs what each probe sees. It never fails on a probe error;
-// the logged lines are the result.
-func TestE2EDiagEnv(t *testing.T) {
+// TestE2EDiagBisect logs what children see under several environments. It
+// never fails on a probe result; the logged lines are the result.
+func TestE2EDiagBisect(t *testing.T) {
 	if testing.Short() {
 		t.Skip("diagnostics are not run with -short")
 	}
@@ -114,7 +90,6 @@ func TestE2EDiagEnv(t *testing.T) {
 	}
 
 	base := t.TempDir()
-	vfoxExe := installVfox(t, base)
 	self, err := os.Executable()
 	if err != nil {
 		t.Fatal(err)
@@ -126,44 +101,61 @@ func TestE2EDiagEnv(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	probe := filepath.Join(base, "probe")
-	writeDiagProbe(t, probe)
 
-	for _, kv := range os.Environ() {
-		key, value, _ := strings.Cut(kv, "=")
-		if strings.HasPrefix(strings.ToUpper(key), "PROGRAMFILES") {
-			t.Logf("DIAG real env: %s=%s", key, value)
+	full := os.Environ()
+	chars := 0
+	for _, kv := range full {
+		chars += len(kv) + 1
+	}
+	t.Logf("DIAG parent: %d entries, %d characters", len(full), chars)
+
+	minimal := minimalDiagEnv(fake, home)
+	t.Logf("DIAG C (minimal) -> %s", classify(diagChild(self, minimal)))
+
+	// B: every entry except ProgramFiles, plus the fake and the two probes.
+	var bset []string
+	for _, kv := range full {
+		if strings.EqualFold(keyOf(kv), "ProgramFiles") {
+			continue
+		}
+		bset = append(bset, kv)
+	}
+	bset = append(bset, "ProgramFiles="+fake, "DIAG_PROBE=hello", "VFOX_HOME="+home)
+	t.Logf("DIAG B (full minus ProgramFiles, plus fake) -> %s", classify(diagChild(self, bset)))
+
+	// Single entries added to the minimal environment.
+	inMinimal := map[string]bool{}
+	for _, kv := range minimal {
+		inMinimal[strings.ToUpper(keyOf(kv))] = true
+	}
+	var addFlips []string
+	for _, kv := range full {
+		key := keyOf(kv)
+		if strings.EqualFold(key, "ProgramFiles") || inMinimal[strings.ToUpper(key)] {
+			continue
+		}
+		env := append(append([]string(nil), minimal...), kv)
+		if classify(diagChild(self, env)) != "fake" {
+			addFlips = append(addFlips, key)
 		}
 	}
+	t.Logf("DIAG add-one-to-C that makes the real folder visible (%d): %v", len(addFlips), addFlips)
 
-	variants := []diagVariant{
-		{"A-append", append(append(os.Environ(), "ProgramFiles="+fake, "DIAG_PROBE=hello"), "VFOX_HOME="+home)},
-		{"B-filtered", append(append(filterDiagEnv(os.Environ(), "ProgramFiles"), "ProgramFiles="+fake, "DIAG_PROBE=hello"), "VFOX_HOME="+home)},
-		{"C-minimal", minimalDiagEnv(fake, home)},
+	// Single entries removed from B (the last three are the appended ones).
+	var removeFlips []string
+	for i := 0; i < len(bset)-3; i++ {
+		env := make([]string, 0, len(bset)-1)
+		env = append(env, bset[:i]...)
+		env = append(env, bset[i+1:]...)
+		if classify(diagChild(self, env)) == "fake" {
+			removeFlips = append(removeFlips, keyOf(bset[i]))
+		}
 	}
+	t.Logf("DIAG remove-one-from-B that makes the fake folder visible (%d): %v", len(removeFlips), removeFlips)
 
-	for _, v := range variants {
-		childEnv := append(append([]string(nil), v.env...), diagChildEnv+"=1")
-
-		child := exec.Command(self, "-test.run=^TestE2EDiagChild$")
-		child.Env = childEnv
-		out, err := child.CombinedOutput()
-		t.Logf("DIAG %s go-child: err=%v out=%s", v.name, err, strings.TrimSpace(string(out)))
-
-		cmdProbe := exec.Command("cmd.exe", "/d", "/c", "echo [%ProgramFiles%] [%DIAG_PROBE%]")
-		cmdProbe.Env = v.env
-		out, err = cmdProbe.CombinedOutput()
-		t.Logf("DIAG %s cmd: err=%v out=%s", v.name, err, strings.TrimSpace(string(out)))
-
-		psProbe := exec.Command("pwsh", "-NoProfile", "-Command",
-			"Write-Output ('[' + $env:ProgramFiles + '] [' + $env:DIAG_PROBE + ']')")
-		psProbe.Env = v.env
-		out, err = psProbe.CombinedOutput()
-		t.Logf("DIAG %s pwsh: err=%v out=%s", v.name, err, strings.TrimSpace(string(out)))
-
-		plugin := exec.Command(vfoxExe, "plugin", "run", probe, "Detect", "--json")
-		plugin.Env = v.env
-		out, err = plugin.CombinedOutput()
-		t.Logf("DIAG %s plugin: err=%v out=%s", v.name, err, strings.TrimSpace(string(out)))
+	// Size only: the minimal environment plus one padding variable.
+	for _, n := range []int{1000, 8000, 16000, 24000, 30000, 32000, 32700, 36000} {
+		env := append(append([]string(nil), minimal...), "DIAG_PAD="+strings.Repeat("x", n))
+		t.Logf("DIAG C + pad %d -> %s", n, classify(diagChild(self, env)))
 	}
 }
