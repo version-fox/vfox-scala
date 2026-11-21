@@ -51,14 +51,14 @@ Only `linux/amd64` is covered. The image pins vfox for that architecture.
 
 ## Running the Windows suite
 
-The Windows suite runs on a Windows host, with PowerShell 7 (`pwsh`) and a JDK on the `PATH`, since the Scala launchers need Java. It cannot run in Linux containers, and Windows containers are not used. From the repository root in PowerShell:
+The Windows suite runs on a Windows host, with PowerShell 7 (`pwsh`) and a JDK on the `PATH`, since the Scala launchers need Java. The second group writes to `Program Files`, so the shell must be elevated (run as administrator). It cannot run in Linux containers, and Windows containers are not used. From the repository root in PowerShell:
 
 ```powershell
 cd tests/e2e
 go test -v -timeout 55m -run TestE2E ./windows
 ```
 
-The suite downloads the vfox 1.1.0 zip, checks its SHA-256, and runs `vfox.exe` from it. `VFOX_HOME` is in a folder whose path has a space, so the checks also cover paths like that. The `ProgramFiles` variable of the vfox process is pointed at a temporary folder, which is where the second group puts its Scala 2.12.20.
+The suite downloads the vfox 1.1.0 zip, checks its SHA-256, and runs `vfox.exe` from it. `VFOX_HOME` is in a folder whose path has a space, so the checks also cover paths like that. The second group puts its Scala 2.12.20 as `scala-system` in the real `Program Files` folder, where the plugin looks, and removes it afterwards. An earlier version pointed `ProgramFiles` at a temporary folder for the vfox process instead; the plugin did not see that override on the Windows runner, so it is not used any more.
 
 ## Environment knobs
 

@@ -51,14 +51,14 @@ go test -v -timeout 55m -run TestE2E ./linux
 
 ## 运行 Windows 套件
 
-Windows 套件在 Windows 主机上运行，需要 PowerShell 7（`pwsh`）以及 `PATH` 中的 JDK，因为 Scala 启动器需要 Java。它无法在 Linux 容器中运行，也不使用 Windows 容器。在仓库根目录的 PowerShell 中执行：
+Windows 套件在 Windows 主机上运行，需要 PowerShell 7（`pwsh`）以及 `PATH` 中的 JDK，因为 Scala 启动器需要 Java。第二组检查要写入 `Program Files`，因此 shell 必须以管理员身份运行。它无法在 Linux 容器中运行，也不使用 Windows 容器。在仓库根目录的 PowerShell 中执行：
 
 ```powershell
 cd tests/e2e
 go test -v -timeout 55m -run TestE2E ./windows
 ```
 
-套件下载 vfox 1.1.0 的 zip，校验其 SHA-256，并从中运行 `vfox.exe`。`VFOX_HOME` 位于路径含空格的文件夹中，因此检查也覆盖这类路径。vfox 进程的 `ProgramFiles` 变量指向一个临时文件夹，第二组检查正是把它的 Scala 2.12.20 放在那里。
+套件下载 vfox 1.1.0 的 zip，校验其 SHA-256，并从中运行 `vfox.exe`。`VFOX_HOME` 位于路径含空格的文件夹中，因此检查也覆盖这类路径。第二组检查把 Scala 2.12.20 以 `scala-system` 的名称放入插件所扫描的真实 `Program Files` 文件夹，检查结束后删除它。早先的版本曾为 vfox 进程把 `ProgramFiles` 指向一个临时文件夹，但插件在 Windows 运行器上没有看到这个覆盖，因此已不再使用。
 
 ## 环境变量与参数
 
