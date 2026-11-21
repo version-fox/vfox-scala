@@ -46,7 +46,7 @@ vfox 加载 `metadata.lua`，在命令需要时调用对应的钩子，并把 `P
 
 ## 版本与下载
 
-`lib/util.lua` 决定版本从哪里获取。表格与理由见 [versions.md](versions.md)。简而言之，Scala 3 以及 2.11 及以后的版本从 GitHub 获取，更早的发行版在 scala-lang.org 上，由各版本的下载页指明归档。`util.source_of` 是做出这一选择的唯一位置；其他函数采用它的结果。
+`lib/util.lua` 决定版本从哪里获取。表格与理由见 [versions.md](versions.md)。简而言之，Scala 3 以及 2.11 及以后的版本从 GitHub 获取，更早的发行版则由各版本的下载页指明归档：在 scala-lang.org 上，2.10.5 至 2.10.7 在 GitHub 上。`util.source_of` 是做出这一选择的唯一位置；其他函数采用它的结果。
 
 校验和来自 GitHub 下载文件旁边的 `.sha256` 文件（如果存在）。`util.parse_sha256` 只接受 64 位的 SHA-256，其他内容一律忽略。
 

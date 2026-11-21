@@ -25,7 +25,7 @@ Scala 版本按发布时的写法书写：`3.10.1`、`2.13.18`、`2.10.4`、`2.7
 | --- | --- | --- | --- |
 | 3.0.0 及以后，包括候选版本 | GitHub，[scala/scala3](https://github.com/scala/scala3/releases) | `scala3-<version>.tar.gz` | `scala3-<version>.zip` |
 | 2.11.0 及以后，包括候选版本和里程碑版本 | GitHub，[scala/scala](https://github.com/scala/scala/releases)，标签 `v<version>` | `scala-<version>.tgz` | `scala-<version>.zip` |
-| 2.11.0 之前，直到 2.5.0 | [scala-lang.org](https://www.scala-lang.org/download/all.html)，各版本下载页所链接的归档 | `.tar.gz` 或 `.tgz`，以页面所写为准 | `.zip` |
+| 2.11.0 之前，直到 2.5.0 | 各版本下载页所链接的归档：在 [scala-lang.org](https://www.scala-lang.org/download/all.html) 上，2.10.5 至 2.10.7 在 [GitHub](https://github.com/scala/scala/releases) 上 | `.tar.gz` 或 `.tgz`，以页面所写为准 | `.zip` |
 
 归档发行版的文件名没有统一格式（`scala-2.7.0-final.tar.gz`、`scala-2.7.7.final.tgz`、`scala-2.10.4.tgz`），因此插件会从所安装版本的下载页读取归档地址。若该页面没有列出当前平台可用的归档，安装会中止，并显示该页面的地址。
 

@@ -58,12 +58,17 @@ function util.parse_listing(html)
 end
 
 --- Returns the major and minor numbers of a version such as `3.5.0` or
---- `2.13.0-M5`, or nil when it does not start with two numbers.
+--- `2.13.0-M5`, or nil when it does not start with two numbers. A name with a
+--- space is not a version: `3.9.0 LTS` is the version `3.9.0` with a note.
 --- @param version string
 --- @return integer|nil major
 --- @return integer|nil minor
 function util.major_minor(version)
-    local major, minor = (version or ""):match("^(%d+)%.(%d+)")
+    local text = version or ""
+    if text:find("%s") then
+        return nil, nil
+    end
+    local major, minor = text:match("^(%d+)%.(%d+)")
     if major == nil then
         return nil, nil
     end
@@ -105,23 +110,33 @@ function util.github_url(version, windows)
     return nil
 end
 
---- Returns the archive of a version on scala-lang.org, from the links of its
---- download page. Windows takes the zip; elsewhere tar.gz, then tgz. The
---- documentation and tool-support archives, and the .msi and .deb packages,
---- are not the distribution and are skipped.
+--- Links of a download page that may name an archive: those on scala-lang.org,
+--- and those on GitHub, which the pages of 2.10.5 to 2.10.7 use.
+util.ARCHIVE_LINK_PATTERNS = {
+    "https?://[%w%.%-]*scala%-lang%.org/files/archive/[^\"%s<>']+",
+    "https://github%.com/scala/scala/releases/download/[^\"%s<>']+",
+}
+
+--- Returns the archive of a version from the links of its download page.
+--- Windows takes the zip; elsewhere tar.gz, then tgz. The documentation and
+--- tool-support archives, and the .msi and .deb packages, are not the
+--- distribution and are skipped. The source archives of GitHub tags are not
+--- under `releases/download`, so they are never read.
 --- @param html string The download page
 --- @param windows boolean
 --- @return string|nil
 function util.archive_url_from_page(html, windows)
     local extensions = windows and { "zip" } or { "tar.gz", "tgz" }
     for _, extension in ipairs(extensions) do
-        for url in html:gmatch("https?://[%w%.%-]*scala%-lang%.org/files/archive/[^\"%s<>']+") do
-            local file = url:match("([^/]+)$") or ""
-            local is_distribution = file:match("^scala%-") ~= nil
-                and not file:find("docs", 1, true)
-                and not file:find("tool-support", 1, true)
-            if is_distribution and file:sub(-(#extension + 1)) == "." .. extension then
-                return url
+        for _, pattern in ipairs(util.ARCHIVE_LINK_PATTERNS) do
+            for url in html:gmatch(pattern) do
+                local file = url:match("([^/]+)$") or ""
+                local is_distribution = file:match("^scala%-") ~= nil
+                    and not file:find("docs", 1, true)
+                    and not file:find("tool-support", 1, true)
+                if is_distribution and file:sub(-(#extension + 1)) == "." .. extension then
+                    return url
+                end
             end
         end
     end
@@ -155,11 +170,8 @@ end
 --- @return string url
 --- @return boolean from_github
 function util.download(version, windows)
-    local url = util.github_url(version, windows)
-    if url ~= nil then
-        return url, true
-    end
-    return util.archive_url(version, windows), false
+    local url = util.github_url(version, windows) or util.archive_url(version, windows)
+    return url, url:find("^https://github%.com/") ~= nil
 end
 
 --- Reads the SHA-256 digest of a `.sha256` file, which holds `<digest>  <name>`.

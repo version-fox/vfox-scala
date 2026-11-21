@@ -4,7 +4,7 @@
 
 [vfox](https://vfox.dev/) 的 Scala 插件。
 
-它安装 Scala 3 和 Scala 2 的各个发行版：2.11 及以后的版本从 GitHub 下载，更早的版本从 scala-lang.org 下载。对于 Scala 发布了 SHA-256 的下载，安装时会据此校验。它还能找到机器上已经装好的 Scala 并把它链接进来，这样无需再下载一份就能通过 vfox 使用。
+它安装 Scala 3 和 Scala 2 的各个发行版：2.11 及以后的版本，以及 2.10.5 至 2.10.7，从 GitHub 下载，更早的版本从 scala-lang.org 下载。对于 Scala 发布了 SHA-256 的下载，安装时会据此校验。它还能找到机器上已经装好的 Scala 并把它链接进来，这样无需再下载一份就能通过 vfox 使用。
 
 ## 安装
 

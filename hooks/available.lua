@@ -29,5 +29,9 @@ function PLUGIN:Available(ctx)
     if resp.status_code ~= 200 then
         error("cannot read the list of Scala versions: status_code => " .. tostring(resp.status_code))
     end
-    return util.parse_listing(resp.body)
+    local versions = util.parse_listing(resp.body)
+    if #versions == 0 then
+        error("cannot read the list of Scala versions: no version on " .. util.SEARCH_URL)
+    end
+    return versions
 end

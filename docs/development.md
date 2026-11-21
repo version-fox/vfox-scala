@@ -46,7 +46,7 @@ A few contracts that cost time to find:
 
 ## Versions and downloads
 
-`lib/util.lua` decides where a version comes from. The table and the reasons are in [versions.md](versions.md). In short, Scala 3 and 2.11 and later come from GitHub, and earlier releases are on scala-lang.org, where the download page of the version names the archive. `util.source_of` is the one place that makes the choice; the other functions take its answer.
+`lib/util.lua` decides where a version comes from. The table and the reasons are in [versions.md](versions.md). In short, Scala 3 and 2.11 and later come from GitHub, and earlier releases come from the archive that the download page of the version names: on scala-lang.org, or on GitHub for 2.10.5 to 2.10.7. `util.source_of` is the one place that makes the choice; the other functions take its answer.
 
 The checksum comes from a `.sha256` file next to a GitHub download, when there is one. `util.parse_sha256` reads only a 64-digit SHA-256; anything else is ignored.
 

@@ -4,7 +4,7 @@
 
 Scala plugin for [vfox](https://vfox.dev/).
 
-It installs Scala 3 and Scala 2 releases, from GitHub for 2.11 and later and from scala-lang.org for the older ones, and checks a download against the SHA-256 that Scala publishes for it where there is one. It also finds Scala that is already on the machine and links it, so you can use it through vfox without a second download.
+It installs Scala 3 and Scala 2 releases, from GitHub for 2.11 and later and for 2.10.5 to 2.10.7, and from scala-lang.org for the older ones, and checks a download against the SHA-256 that Scala publishes for it where there is one. It also finds Scala that is already on the machine and links it, so you can use it through vfox without a second download.
 
 ## Install
 
