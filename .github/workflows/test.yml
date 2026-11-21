@@ -35,10 +35,11 @@ jobs:
         with:
           go-version: '1.27.1'
           cache: false
-      # vfox plugin test came with vfox 1.0.13; 1.1.0 brings the Detect hook,
-      # which tests/detect_*_test.lua and `vfox link --detect` exercise. The
-      # release is pinned and its checksum checked, as the actions are pinned by
-      # their versions; change the two together to move to another release.
+      # vfox plugin test came with vfox 1.0.13. 1.1.0 is the first release with
+      # `vfox link --detect`, which calls the Detect hook that the tests in
+      # tests/detect_*_test.lua cover. The release is pinned and its checksum
+      # checked, as the actions are pinned by their versions; change the two
+      # together to move to another release.
       - name: Install vfox
         env:
           VFOX_VERSION: 1.1.0
