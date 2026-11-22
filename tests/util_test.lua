@@ -106,6 +106,34 @@ check(
     "2.10.4 windows archive"
 )
 
+-- Scala 2.10.5 to 2.10.7 link their archives on GitHub, not on scala-lang.org.
+local PAGE_2_10_5 = [[
+<a id="#link-main-unixsys" href="https://github.com/scala/scala/releases/download/v2.10.5/scala-2.10.5.tgz">
+<a id="#link-main-windows" href="https://github.com/scala/scala/releases/download/v2.10.5/scala-2.10.5.msi">
+<a id="#link-non-main-sys" href="https://github.com/scala/scala/releases/download/v2.10.5/scala-2.10.5.zip">
+<a id="#link-non-main-sys" href="https://github.com/scala/scala/releases/download/v2.10.5/scala-2.10.5.deb">
+<a id="#link-non-main-sys" href="https://github.com/scala/scala/releases/download/v2.10.5/scala-docs-2.10.5.zip">
+<a id="#link-non-main-sys" href="https://github.com/scala/scala/archive/v2.10.5.tar.gz">
+]]
+check(
+    util.archive_url_from_page(PAGE_2_10_5, false),
+    "https://github.com/scala/scala/releases/download/v2.10.5/scala-2.10.5.tgz",
+    "2.10.5 unix archive on GitHub"
+)
+check(
+    util.archive_url_from_page(PAGE_2_10_5, true),
+    "https://github.com/scala/scala/releases/download/v2.10.5/scala-2.10.5.zip",
+    "2.10.5 windows archive on GitHub"
+)
+check(
+    util.archive_url_from_page('<a href="https://github.com/scala/scala/archive/v2.10.5.tar.gz">', false),
+    nil,
+    "a GitHub source archive is not a distribution"
+)
+
+-- A name with a space is not a version: `3.9.0 LTS` has no major number.
+check(util.major_minor("3.9.0 LTS"), nil, "an LTS name is not a version")
+
 local PAGE_2_7_0_FINAL = [[
 <a id="#link-main-unixsys" href="https://scala-lang.org/files/archive/scala-2.7.0-final.tar.gz">
 <a id="#link-main-windows" href="https://scala-lang.org/files/archive/scala-2.7.0-final.zip">

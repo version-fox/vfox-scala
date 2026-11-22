@@ -25,7 +25,7 @@ The source depends on the version. Windows takes the zip everywhere; Linux and m
 | --- | --- | --- | --- |
 | 3.0.0 and later, release candidates included | GitHub, [scala/scala3](https://github.com/scala/scala3/releases) | `scala3-<version>.tar.gz` | `scala3-<version>.zip` |
 | 2.11.0 and later, release candidates and milestones included | GitHub, [scala/scala](https://github.com/scala/scala/releases), tag `v<version>` | `scala-<version>.tgz` | `scala-<version>.zip` |
-| Before 2.11.0, down to 2.5.0 | [scala-lang.org](https://www.scala-lang.org/download/all.html), the archive that each version's download page links | `.tar.gz` or `.tgz`, as the page names it | `.zip` |
+| Before 2.11.0, down to 2.5.0 | The archive that each version's download page links: on [scala-lang.org](https://www.scala-lang.org/download/all.html), and on [GitHub](https://github.com/scala/scala/releases) for 2.10.5 to 2.10.7 | `.tar.gz` or `.tgz`, as the page names it | `.zip` |
 
 The archive releases do not follow one naming pattern (`scala-2.7.0-final.tar.gz`, `scala-2.7.7.final.tgz`, `scala-2.10.4.tgz`), so the plugin reads the archive from the download page of the version it installs. A page that lists no archive for the platform stops the install with the page's address.
 

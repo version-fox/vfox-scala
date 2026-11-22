@@ -40,6 +40,16 @@ local routes = {
         body = '<a href="https://scala-lang.org/files/archive/scala-2.10.4.tgz">\n'
             .. '<a href="https://scala-lang.org/files/archive/scala-2.10.4.zip">\n',
     },
+    [PAGES .. "2.10.5.html"] = {
+        status_code = 200,
+        body = '<a href="https://github.com/scala/scala/releases/download/v2.10.5/scala-2.10.5.tgz">\n'
+            .. '<a href="https://github.com/scala/scala/releases/download/v2.10.5/scala-2.10.5.zip">\n'
+            .. '<a href="https://github.com/scala/scala/archive/v2.10.5.tar.gz">\n',
+    },
+    [SCALA2 .. "2.10.5/scala-2.10.5.tgz.sha256"] = {
+        status_code = 200,
+        body = DIGEST .. "  scala-2.10.5.tgz\n",
+    },
 }
 
 local requests = {}
@@ -89,6 +99,12 @@ expect_url("2.13.14", true, SCALA2 .. "2.13.14/scala-2.13.14.zip", "Scala 2.13 o
 result = expect_url("2.10.4", false, "https://scala-lang.org/files/archive/scala-2.10.4.tgz", "Scala 2.10.4")
 assert(result.sha256 == nil, "scala-lang.org publishes no checksum here")
 expect_url("2.10.4", true, "https://scala-lang.org/files/archive/scala-2.10.4.zip", "Scala 2.10.4 on Windows")
+-- Scala 2.10.5 to 2.10.7 are on GitHub, which their download page links. A GitHub
+-- archive is checked against the .sha256 file next to it, where there is one.
+result = expect_url("2.10.5", false, SCALA2 .. "2.10.5/scala-2.10.5.tgz", "Scala 2.10.5")
+assert(result.sha256 == DIGEST, "the digest of a GitHub archive: " .. tostring(result.sha256))
+expect_url("2.10.5", true, SCALA2 .. "2.10.5/scala-2.10.5.zip", "Scala 2.10.5 on Windows")
+
 expect_url("2.5.0.final", false, "https://scala-lang.org/files/archive/scala-2.5.0-final.tar.gz", "Scala 2.5.0 final")
 expect_url(
     "2.7.7.final",
@@ -101,6 +117,14 @@ expect_url(
 local ok, message = install("2.9.0.1", false)
 assert(not ok, "a version without a download page must fail")
 assert(tostring(message):find("2.9.0.1", 1, true), "the error names the version: " .. tostring(message))
+cases = cases + 1
+
+-- "3.9.0 LTS" is the version 3.9.0 with a note. With its space it is no version, so no URL is made.
+local lts_ok, lts_message = install("3.9.0 LTS", false)
+assert(
+    not lts_ok and tostring(lts_message):find("not a Scala version", 1, true),
+    "an LTS name is refused: " .. tostring(lts_message)
+)
 cases = cases + 1
 
 -- downloads.lightbend.com answers 403 for every Scala release, so no request goes there.

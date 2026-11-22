@@ -28,13 +28,14 @@ local LISTING = [[
 ]]
 
 local status = 200
+local body = LISTING
 local requests = {}
 local plugin = test.load({
     os = "linux",
     arch = "amd64",
     http = function(req)
         table.insert(requests, req.url)
-        return { status_code = status, body = LISTING }
+        return { status_code = status, body = body }
     end,
 })
 
@@ -54,10 +55,25 @@ cases = cases + 1
 
 -- A failed read is an error, not an empty list that looks like no release.
 status = 500
-local ok = pcall(function()
+local ok, message = pcall(function()
     plugin:Available({})
 end)
-assert(not ok, "a 500 from the download list must fail")
+assert(
+    not ok and tostring(message):find("cannot read the list of Scala versions", 1, true),
+    "a 500 from the download list must fail: " .. tostring(message)
+)
+cases = cases + 1
+
+-- A page that answers 200 without any version, such as a maintenance page, is an error too.
+status = 200
+body = "<html><body>Under maintenance</body></html>"
+ok, message = pcall(function()
+    plugin:Available({})
+end)
+assert(
+    not ok and tostring(message):find("cannot read the list of Scala versions", 1, true),
+    "a page without versions must fail: " .. tostring(message)
+)
 cases = cases + 1
 
 print("PASS: " .. cases .. " Available cases")
