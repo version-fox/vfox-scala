@@ -15,9 +15,10 @@
 --- Versions, download addresses and checksums of the Scala releases.
 ---
 --- Scala 3 and Scala 2.11 and later are downloaded from GitHub. Earlier
---- releases are on scala-lang.org, whose file names follow no single pattern
---- (`scala-2.5.0-final.tar.gz`, `scala-2.7.7.final.tgz`), so the download page
---- of such a version names its archive.
+--- releases are archives that the download page of each version links: on
+--- scala-lang.org, or on GitHub for 2.10.5 to 2.10.7. Their file names follow
+--- no single pattern (`scala-2.5.0-final.tar.gz`, `scala-2.7.7.final.tgz`), so
+--- the download page of such a version names its archive.
 local http = require("http")
 
 local util = {}

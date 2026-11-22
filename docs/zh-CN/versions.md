@@ -11,8 +11,8 @@ Scala 版本按发布时的写法书写：`3.10.1`、`2.13.18`、`2.10.4`、`2.7
 `vfox search scala` 读取 [scala-lang.org](https://www.scala-lang.org/download/all.html) 的下载列表。长期支持（LTS）版本带有 `LTS` 标注：
 
 ```text
-3.9.0    LTS
 3.10.1
+3.9.0    LTS
 ```
 
 列表与页面中的顺序一致，最新的在前。
@@ -28,8 +28,6 @@ Scala 版本按发布时的写法书写：`3.10.1`、`2.13.18`、`2.10.4`、`2.7
 | 2.11.0 之前，直到 2.5.0 | 各版本下载页所链接的归档：在 [scala-lang.org](https://www.scala-lang.org/download/all.html) 上，2.10.5 至 2.10.7 在 [GitHub](https://github.com/scala/scala/releases) 上 | `.tar.gz` 或 `.tgz`，以页面所写为准 | `.zip` |
 
 归档发行版的文件名没有统一格式（`scala-2.7.0-final.tar.gz`、`scala-2.7.7.final.tgz`、`scala-2.10.4.tgz`），因此插件会从所安装版本的下载页读取归档地址。若该页面没有列出当前平台可用的归档，安装会中止，并显示该页面的地址。
-
-在本次发布之前，插件向 `downloads.lightbend.com` 请求 2.10.4 至 2.13.x 的版本，该站点对这些请求返回 403。2.11 及以后的版本现在改从 GitHub 获取。
 
 ## 校验和
 

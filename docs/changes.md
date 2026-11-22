@@ -6,6 +6,8 @@ What changed in each release, as a user notices it. GitHub's release pages list 
 
 ## Unreleased
 
+## 0.1.2 (2026-11-22)
+
 - `vfox install scala@3.0.0`, and the Scala 3 release candidates such as `3.0.0-RC1`, asked GitHub for a `.tgz` that Scala 3 does not publish, so the download failed with a 404. They are `.tar.gz` now, and `.zip` on Windows. See [versions.md](versions.md#where-a-version-is-downloaded-from).
 - Scala 2.10.4 and the Scala 2.11 to 2.13 releases asked `downloads.lightbend.com` for their files, which answered 403, so they did not install. Scala 2.11 and later come from GitHub now, and 2.10.4 and the releases before 2.11 from the archive that each version's download page links: on scala-lang.org, or on GitHub for 2.10.5 to 2.10.7. See [versions.md](versions.md#where-a-version-is-downloaded-from).
 - `vfox install scala@2.5.0.final` asked `downloads.lightbend.com` for its file too, and not the scala-lang.org archive that has it. It comes from the archive now.
