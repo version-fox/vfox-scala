@@ -11,8 +11,8 @@ A Scala version is written as it is released: `3.10.1`, `2.13.18`, `2.10.4`, `2.
 `vfox search scala` reads the download list of [scala-lang.org](https://www.scala-lang.org/download/all.html). Long-term support releases carry the note `LTS`:
 
 ```text
-3.9.0    LTS
 3.10.1
+3.9.0    LTS
 ```
 
 The list is newest first, as the page has it.
@@ -28,8 +28,6 @@ The source depends on the version. Windows takes the zip everywhere; Linux and m
 | Before 2.11.0, down to 2.5.0 | The archive that each version's download page links: on [scala-lang.org](https://www.scala-lang.org/download/all.html), and on [GitHub](https://github.com/scala/scala/releases) for 2.10.5 to 2.10.7 | `.tar.gz` or `.tgz`, as the page names it | `.zip` |
 
 The archive releases do not follow one naming pattern (`scala-2.7.0-final.tar.gz`, `scala-2.7.7.final.tgz`, `scala-2.10.4.tgz`), so the plugin reads the archive from the download page of the version it installs. A page that lists no archive for the platform stops the install with the page's address.
-
-Before this release, the plugin asked `downloads.lightbend.com` for versions from 2.10.4 to 2.13.x, which answered 403. Versions from 2.11 on now come from GitHub.
 
 ## Checksums
 

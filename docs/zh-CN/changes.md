@@ -6,6 +6,8 @@
 
 ## 未发布
 
+## 0.1.2（2026-11-22）
+
 - `vfox install scala@3.0.0`，以及 `3.0.0-RC1` 等 Scala 3 候选版本，向 GitHub 请求了 Scala 3 并不发布的 `.tgz`，因此下载以 404 失败。现在改为 `.tar.gz`，在 Windows 上为 `.zip`。参见 [versions.md](versions.md#每个版本从哪里下载)。
 - Scala 2.10.4 以及 2.11 至 2.13 的发行版向 `downloads.lightbend.com` 请求其文件，该站点对这些请求返回 403，因此无法安装。现在 Scala 2.11 及以后的版本从 GitHub 获取，2.10.4 以及 2.11 之前的发行版从各版本下载页所链接的归档获取：在 scala-lang.org 上，2.10.5 至 2.10.7 在 GitHub 上。参见 [versions.md](versions.md#每个版本从哪里下载)。
 - `vfox install scala@2.5.0.final` 同样向 `downloads.lightbend.com` 请求其文件，而没有去请求拥有该文件的 scala-lang.org 归档。现在它从归档获取。
